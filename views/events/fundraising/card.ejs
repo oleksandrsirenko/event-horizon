@@ -1,0 +1,21 @@
+<div class="alert-card" data-event-id="${event.id}" data-company="${event.company}" data-funding-type="${event.fundingType}" data-amount="${event.amount}">
+    <div class="severity severity-${event.severity}">${event.severity}</div>
+    <h3>${event.title}</h3>
+    
+    <div class="alert-meta">
+      <span><strong>Company:</strong> ${event.company}</span>
+      <span><strong>Type:</strong> ${event.fundingType}</span>
+    </div>
+    
+    <div class="funding-amount">${formatCurrency(event.amount, event.currency)}</div>
+    
+    <div class="alert-body">
+      <p>${event.details || event.impact || 'No details available'}</p>
+      ${event.investors && event.investors.length > 0 ? 
+        `<div class="investors">
+          ${event.investors.map(investor => `<span>${investor}</span>`).join('')}
+        </div>` : ''}
+    </div>
+    
+    <div class="timestamp">${formatDate(event.timestamp)} at ${formatTime(event.timestamp)}</div>
+</div>
