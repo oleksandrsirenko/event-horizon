@@ -1,0 +1,58 @@
+<div class="event-detail-modal">
+    <div class="event-detail-content">
+      <button class="close-modal">&times;</button>
+      <h2><%= event.title %></h2>
+      
+      <div class="detail-section">
+        <div class="detail-meta">
+          <div class="detail-item">
+            <span class="label">Company:</span>
+            <span class="value"><%= event.company %></span>
+          </div>
+          <div class="detail-item">
+            <span class="label">Funding Type:</span>
+            <span class="value"><%= event.fundingType %></span>
+          </div>
+          <div class="detail-item">
+            <span class="label">Amount:</span>
+            <span class="value"><%= formatCurrency(event.amount, event.currency) %></span>
+          </div>
+          <div class="detail-item">
+            <span class="label">Date:</span>
+            <span class="value"><%= formatDate(event.timestamp) %></span>
+          </div>
+        </div>
+      </div>
+      
+      <div class="detail-section">
+        <h3>Summary</h3>
+        <p><%= event.details || event.impact || 'No details available' %></p>
+      </div>
+      
+      <% if (event.investors && event.investors.length > 0) { %>
+      <div class="detail-section">
+        <h3>Investors</h3>
+        <div class="investors-list">
+          <% event.investors.forEach(function(investor) { %>
+            <span class="investor-tag"><%= investor %></span>
+          <% }); %>
+        </div>
+      </div>
+      <% } %>
+      
+      <% if (event.original && event.original.articles && event.original.articles.length > 0) { %>
+      <div class="detail-section">
+        <h3>Source Articles</h3>
+        <ul class="article-list">
+          <% event.original.articles.forEach(function(article) { %>
+            <li>
+              <a href="<%= article.link %>" target="_blank" rel="noopener noreferrer">
+                <%= article.title %>
+              </a>
+            </li>
+          <% }); %>
+        </ul>
+      </div>
+      <% } %>
+    </div>
+</div>

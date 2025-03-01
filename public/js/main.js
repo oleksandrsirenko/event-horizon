@@ -242,3 +242,112 @@ function switchEventType(newEventType) {
   // we could dynamically load templates without a page reload
   window.location.href = `/?eventType=${newEventType}`;
 }
+
+/**
+ * Event Detail View Functionality
+ * Handles the modal popup with detailed event information
+ */
+
+// Initialize the event detail view when DOM is loaded
+document.addEventListener('DOMContentLoaded', () => {
+  initEventDetailModal();
+});
+
+/**
+ * Initialize the event detail modal
+ */
+function initEventDetailModal() {
+  // Create modal overlay if it doesn't exist
+  if (!document.querySelector('.modal-overlay')) {
+    const modalOverlay = document.createElement('div');
+    modalOverlay.className = 'modal-overlay';
+    document.body.appendChild(modalOverlay);
+    
+    // Close modal when clicking the overlay
+    modalOverlay.addEventListener('click', (e) => {
+      if (e.target === modalOverlay) {
+        closeEventDetailModal();
+      }
+    });
+    
+    // Also close on escape key
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') {
+        closeEventDetailModal();
+      }
+    });
+  }
+  
+  // Delegate click event for learn more buttons
+  document.addEventListener('click', (e) => {
+    // Check if the click was on a learn more button
+    if (e.target.classList.contains('learn-more-btn')) {
+      e.preventDefault();
+      const eventId = e.target.dataset.eventId;
+      if (eventId) {
+        openEventDetail(eventId);
+      }
+    }
+    
+    // Close button in modal
+    if (e.target.classList.contains('close-modal')) {
+      e.preventDefault();
+      closeEventDetailModal();
+    }
+  });
+}
+
+/**
+ * Open event detail modal for a specific event
+ * @param {string} eventId - ID of the event to display
+ */
+function openEventDetail(eventId) {
+  // Find the event in our stored events array
+  const event = events.find(e => e.id === eventId);
+  if (!event) {
+    console.error('Event not found:', eventId);
+    return;
+  }
+  
+  // Get or create modal overlay
+  const modalOverlay = document.querySelector('.modal-overlay');
+  
+  // Fetch the rendered detail view
+  fetch('/render-event-detail', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({
+      event: event
+    })
+  })
+  .then(response => response.json())
+  .then(data => {
+    if (data.error) {
+      console.error('Error rendering event detail:', data.error);
+      return;
+    }
+    
+    // Insert the HTML into the modal
+    modalOverlay.innerHTML = data.html;
+    
+    // Show the modal
+    setTimeout(() => {
+      modalOverlay.classList.add('active');
+    }, 10);
+  })
+  .catch(error => {
+    console.error('Failed to render event detail:', error);
+  });
+}
+
+/**
+ * Close the event detail modal
+ */
+function closeEventDetailModal() {
+  const modalOverlay = document.querySelector('.modal-overlay');
+  if (modalOverlay) {
+    modalOverlay.classList.remove('active');
+  }
+}
