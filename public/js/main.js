@@ -278,9 +278,10 @@ function initEventDetailModal() {
     });
   }
   
-  // Delegate click event for learn more links
+  // Delegate click event for learn more buttons
   document.addEventListener('click', (e) => {
-    if (e.target.classList.contains('learn-more')) {
+    // Check if the click was on a learn more button
+    if (e.target.classList.contains('learn-more-btn')) {
       e.preventDefault();
       const eventId = e.target.dataset.eventId;
       if (eventId) {
