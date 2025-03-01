@@ -138,6 +138,55 @@ app.post('/render-event-card', (req, res) => {
   }
 });
 
+// Route for rendering event detail view
+app.post('/render-event-detail', (req, res) => {
+  try {
+    const event = req.body.event;
+    
+    // Helper functions for the template
+    const helpers = {
+      formatCurrency: (amount, currency = 'USD') => {
+        if (!amount) return '$0';
+        
+        if (amount >= 1000000000) {
+          return `$${(amount / 1000000000).toFixed(1)}B`;
+        } else if (amount >= 1000000) {
+          return `$${(amount / 1000000).toFixed(1)}M`;
+        } else if (amount >= 1000) {
+          return `$${(amount / 1000).toFixed(0)}K`;
+        }
+        
+        return `$${parseFloat(amount).toLocaleString()}`;
+      },
+      formatDate: (dateString) => {
+        const date = new Date(dateString);
+        return date.toLocaleDateString([], { month: 'short', day: 'numeric' });
+      },
+      formatTime: (dateString) => {
+        const date = new Date(dateString);
+        return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+      }
+    };
+    
+    // Combine the event data with helper functions
+    const templateData = { event, ...helpers };
+    
+    // Create the views/events/fundraising/detail.ejs file
+    // and use it for rendering here
+    res.render('events/fundraising/detail', templateData, (err, html) => {
+      if (err) {
+        logger.error('Error rendering event detail:', err);
+        res.status(500).json({ error: 'Failed to render event detail' });
+      } else {
+        res.json({ html });
+      }
+    });
+  } catch (error) {
+    logger.error('Error in render-event-detail endpoint:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
 // Event types API endpoint
 app.get('/api/event-types', (req, res) => {
   res.json(eventTypes.filter(type => type.enabled));
