@@ -1,13 +1,23 @@
 const express = require('express');
 const cors = require('cors');
+const helmet = require('helmet');
 const path = require('path');
 const sampleEvents = require('./sample-events');
+const config = require('./config');
+const logger = require('./utils/logger');
 
 const app = express();
-const PORT = process.env.PORT || 3001;
+const PORT = config.server.port;
+
+// Security middleware
+app.use(helmet());
 
 // Enable CORS for development
 app.use(cors());
+
+// Body parser middleware
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
 
 // Serve static files from the public directory
 app.use(express.static(path.join(__dirname, '../public')));
@@ -26,6 +36,8 @@ app.get('/stream/events', (req, res) => {
   const region = req.query.region || 'all';
   const severity = req.query.severity || 'all';
   const type = req.query.type || 'all';
+  
+  logger.info(`New SSE connection established with filters: region=${region}, severity=${severity}, type=${type}`);
   
   // Send the initial batch of events (for demo purposes)
   setTimeout(() => {
@@ -58,11 +70,16 @@ app.get('/stream/events', (req, res) => {
   // Handle client disconnect
   req.on('close', () => {
     clearInterval(intervalId);
-    console.log('Client disconnected');
+    logger.info('Client disconnected from SSE stream');
   });
+});
+
+// Health check endpoint
+app.get('/health', (req, res) => {
+  res.status(200).json({ status: 'ok' });
 });
 
 // Start the server
 app.listen(PORT, () => {
-  console.log(`Server running on http://localhost:${PORT}`);
+  logger.info(`Server running in ${config.server.nodeEnv} mode on http://localhost:${PORT}`);
 });
