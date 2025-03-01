@@ -10,7 +10,18 @@
     <div class="funding-amount"><%= formatCurrency(event.amount, event.currency) %></div>
     
     <div class="alert-body">
-      <p><%= event.details || event.impact || 'No details available' %></p>
+      <p class="truncated-content">
+        <% 
+        let summary = event.details || event.impact || 'No details available';
+        let words = summary.split(' ');
+        let truncated = words.length > 50;
+        let displaySummary = truncated ? words.slice(0, 50).join(' ') + '...' : summary;
+        %>
+        <%= displaySummary %>
+        <% if (truncated) { %>
+          <a href="#" class="learn-more" data-event-id="<%= event.id %>">Learn more</a>
+        <% } %>
+      </p>
       <% if (event.investors && event.investors.length > 0) { %>
         <div class="investors">
           <% event.investors.forEach(function(investor) { %>
@@ -21,4 +32,4 @@
     </div>
     
     <div class="timestamp"><%= formatDate(event.timestamp) %> at <%= formatTime(event.timestamp) %></div>
-</div>
+  </div>
