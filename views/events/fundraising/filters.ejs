@@ -1,0 +1,31 @@
+<div class="filters">
+    <div class="filter-group">
+      <label for="funding-filter">Funding Type:</label>
+      <select id="funding-filter" data-filter-key="fundingType">
+        <option value="all">All Types</option>
+        <option value="Seed">Seed</option>
+        <option value="Series A">Series A</option>
+        <option value="Series B">Series B</option>
+        <option value="Series C">Series C</option>
+        <option value="Late Stage">Late Stage</option>
+        <option value="IPO">IPO</option>
+        <option value="Acquisition">Acquisition</option>
+        <option value="Angel">Angel</option>
+      </select>
+    </div>
+    
+    <div class="filter-group">
+      <label for="amount-filter">Amount Range:</label>
+      <select id="amount-filter" data-filter-key="amount">
+        <option value="all">All Amounts</option>
+        <option value="high">High (≥$100M)</option>
+        <option value="medium">Medium ($10M-$100M)</option>
+        <option value="low">Low (<$10M)</option>
+      </select>
+    </div>
+    
+    <div class="filter-group">
+      <label for="company-filter">Company:</label>
+      <input type="text" id="company-filter" data-filter-key="company" placeholder="Filter by company name">
+    </div>
+</div>
