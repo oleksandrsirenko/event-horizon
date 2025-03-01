@@ -75,10 +75,32 @@
   <!-- Include footer partial -->
   <%- include('partials/footer', { config }) %>
   
-  <!-- Event card templates -->
-  <template id="fundraising-card-template">
-    <%- include('events/fundraising/card') %>
-  </template>
+  <!-- Helper functions used by client-side JavaScript -->
+  <script>
+    function formatCurrency(amount, currency = 'USD') {
+      if (!amount) return '$0';
+      
+      if (amount >= 1000000000) {
+        return `$${(amount / 1000000000).toFixed(1)}B`;
+      } else if (amount >= 1000000) {
+        return `$${(amount / 1000000).toFixed(1)}M`;
+      } else if (amount >= 1000) {
+        return `$${(amount / 1000).toFixed(0)}K`;
+      }
+      
+      return `$${parseFloat(amount).toLocaleString()}`;
+    }
+    
+    function formatDate(dateString) {
+      const date = new Date(dateString);
+      return date.toLocaleDateString([], { month: 'short', day: 'numeric' });
+    }
+    
+    function formatTime(dateString) {
+      const date = new Date(dateString);
+      return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    }
+  </script>
   
   <!-- JavaScript files -->
   <script src="/js/events.js"></script>

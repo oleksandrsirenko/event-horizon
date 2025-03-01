@@ -25,7 +25,7 @@ app.use(helmet({
 app.use(cors());
 
 // Body parser middleware
-app.use(express.json());
+app.use(express.json());                 // <-- ADD THIS LINE for JSON parsing
 app.use(express.urlencoded({ extended: true }));
 
 // Set up EJS as the view engine
@@ -83,6 +83,59 @@ app.get('/stream/events', (req, res) => {
     eventsPoller.removeClient(res);
     logger.info('Client disconnected from SSE stream');
   });
+});
+
+// Route for rendering event cards via AJAX
+app.post('/render-event-card', (req, res) => {
+  try {
+    const event = req.body.event;
+    const eventType = req.body.eventType || 'fundraising';
+    
+    // Helper functions for the template
+    const helpers = {
+      formatCurrency: (amount, currency = 'USD') => {
+        if (!amount) return '$0';
+        
+        if (amount >= 1000000000) {
+          return `${(amount / 1000000000).toFixed(1)}B`;
+        } else if (amount >= 1000000) {
+          return `${(amount / 1000000).toFixed(1)}M`;
+        } else if (amount >= 1000) {
+          return `${(amount / 1000).toFixed(0)}K`;
+        }
+        
+        return `${parseFloat(amount).toLocaleString()}`;
+      },
+      formatDate: (dateString) => {
+        const date = new Date(dateString);
+        return date.toLocaleDateString([], { month: 'short', day: 'numeric' });
+      },
+      formatTime: (dateString) => {
+        const date = new Date(dateString);
+        return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+      }
+    };
+    
+    // Combine the event data with helper functions
+    const templateData = { event, ...helpers };
+    
+    // Render the appropriate template
+    if (eventType === 'fundraising') {
+      res.render('events/fundraising/card', templateData, (err, html) => {
+        if (err) {
+          logger.error('Error rendering event card:', err);
+          res.status(500).json({ error: 'Failed to render event card' });
+        } else {
+          res.json({ html });
+        }
+      });
+    } else {
+      res.status(400).json({ error: 'Unsupported event type' });
+    }
+  } catch (error) {
+    logger.error('Error in render-event-card endpoint:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
 });
 
 // Event types API endpoint

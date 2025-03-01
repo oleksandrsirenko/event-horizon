@@ -121,77 +121,63 @@ function processEvent(event) {
 
 // Function to render an event card
 function renderEvent(event, eventType, isNew = false) {
-  // Get the template for this event type
+  // Get the event config
   const eventConfig = EventTypes[eventType];
   if (!eventConfig) return;
   
-  const templateId = eventConfig.cardTemplate;
-  const template = document.getElementById(templateId);
-  if (!template) return;
-  
-  // Create a container for the event
-  const container = document.createElement('div');
-  
-  // Clone the template content
-  const clone = template.content.cloneNode(true);
-  container.appendChild(clone);
-  
-  // Get the event card element
-  const cardElement = container.querySelector('.alert-card');
-  if (!cardElement) return;
-  
-  // Add new class if this is a new event
-  if (isNew) {
-    cardElement.classList.add('new-alert');
-  }
-  
-  // Set data attributes
-  cardElement.dataset.eventId = event.id || '';
-  cardElement.dataset.company = event.company || '';
-  cardElement.dataset.fundingType = event.fundingType || '';
-  cardElement.dataset.amount = event.amount || 0;
-  
-  // Replace template variables with actual values
-  const html = cardElement.outerHTML
-    .replace(/\${event\.id}/g, event.id || '')
-    .replace(/\${event\.title}/g, event.title || 'Untitled Event')
-    .replace(/\${event\.company}/g, event.company || 'Unknown Company')
-    .replace(/\${event\.fundingType}/g, event.fundingType || 'Fundraising')
-    .replace(/\${event\.severity}/g, event.severity || 'medium')
-    .replace(/\${event\.details}/g, event.details || 'No details available')
-    .replace(/\${event\.impact}/g, event.impact || '')
-    .replace(/\${formatCurrency\(event\.amount, event\.currency\)}/g, formatCurrency(event.amount, event.currency))
-    .replace(/\${formatDate\(event\.timestamp\)}/g, formatDate(event.timestamp))
-    .replace(/\${formatTime\(event\.timestamp\)}/g, formatTime(event.timestamp));
-  
-  // Handle investors array if present (for fundraising events)
-  let investorsHtml = '';
-  if (event.investors && event.investors.length > 0) {
-    investorsHtml = `<div class="investors">
-      ${event.investors.map(investor => `<span>${investor}</span>`).join('')}
-    </div>`;
-  }
-  
-  // Replace the investors placeholder with generated HTML or empty string
-  let finalHtml = html.replace(/\${event\.investors && event\.investors\.length > 0 \? .*? : ''}/g, investorsHtml);
-  
-  // Create a temporary container for the HTML
-  const temp = document.createElement('div');
-  temp.innerHTML = finalHtml;
-  
-  // Get the events container
-  const eventsContainer = document.getElementById('events-container');
-  if (!eventsContainer) return;
-  
-  // Add the event to the container
-  if (isNew) {
-    eventsContainer.prepend(temp.firstChild);
-  } else {
-    eventsContainer.appendChild(temp.firstChild);
-  }
-  
-  // Apply filters to show/hide the event
-  applyFilters();
+  // Use the server-side rendering endpoint to get the HTML
+  fetch('/render-event-card', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({
+      event: event,
+      eventType: eventType
+    })
+  })
+  .then(response => response.json())
+  .then(data => {
+    if (data.error) {
+      console.error('Error rendering event card:', data.error);
+      return;
+    }
+    
+    // Create a temporary container for the HTML
+    const temp = document.createElement('div');
+    temp.innerHTML = data.html;
+    
+    // Get the event card element
+    const cardElement = temp.firstChild;
+    
+    // Add new class if this is a new event
+    if (isNew && cardElement) {
+      cardElement.classList.add('new-alert');
+    }
+    
+    // Get the events container
+    const eventsContainer = document.getElementById('events-container');
+    if (!eventsContainer) return;
+    
+    // Hide empty state if present
+    const emptyState = eventsContainer.querySelector('.empty-state');
+    if (emptyState) {
+      emptyState.style.display = 'none';
+    }
+    
+    // Add the event to the container
+    if (isNew) {
+      eventsContainer.prepend(cardElement);
+    } else {
+      eventsContainer.appendChild(cardElement);
+    }
+    
+    // Apply filters to show/hide the event
+    applyFilters();
+  })
+  .catch(error => {
+    console.error('Failed to render event card:', error);
+  });
 }
 
 // Function to update stats based on event type
