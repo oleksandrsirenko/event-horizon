@@ -8,12 +8,7 @@ const config = require('../config');
  * Polls the Newscatcher API at regular intervals and emits events
  */
 class EventsPoller extends EventEmitter {
-  constructor(options = {}
-
-// Create a singleton instance
-const eventsPoller = new EventsPoller();
-
-module.exports = eventsPoller;) {
+  constructor(options = {}) {
     super();
     
     this.pollingInterval = options.pollingInterval || config.newscatcher.pollingInterval || 30000;
@@ -29,6 +24,108 @@ module.exports = eventsPoller;) {
     
     logger.info(`EventsPoller initialized with ${this.useRealApi ? 'real API' : 'sample data'}`);
     logger.info(`Polling interval: ${this.pollingInterval}ms, Max events: ${this.maxEvents}`);
+  }
+
+  /**
+   * Start polling for events
+   */
+  start() {
+    if (this.isPolling) {
+      logger.debug('Poller already running');
+      return;
+    }
+    
+    logger.info('Starting events poller');
+    this.isPolling = true;
+    
+    // Poll immediately on start
+    this.poll();
+    
+    // Set up polling interval
+    this.pollTimer = setInterval(() => {
+      this.poll();
+    }, this.pollingInterval);
+  }
+
+  /**
+   * Stop polling for events
+   */
+  stop() {
+    if (!this.isPolling) {
+      return;
+    }
+    
+    logger.info('Stopping events poller');
+    this.isPolling = false;
+    
+    if (this.pollTimer) {
+      clearInterval(this.pollTimer);
+      this.pollTimer = null;
+    }
+  }
+
+  /**
+   * Poll for new events
+   */
+  async poll() {
+    if (!this.isPolling) {
+      return;
+    }
+    
+    try {
+      // If we're using the real API and have an API key
+      if (this.useRealApi) {
+        logger.debug('Polling Newscatcher API for events');
+        
+        // Get events from API - adjust days back for balance between response time and coverage
+        // For production, we want a smaller window to avoid long API response times
+        const daysBack = config.server.nodeEnv === 'production' ? 1 : 3;
+        const events = await apiClient.getFundraisingEvents(daysBack);
+        
+        // Process new events
+        this.processNewEvents(events);
+        
+        // Reset consecutive errors counter
+        this.consecutiveErrors = 0;
+      } else {
+        logger.debug('Using sample data (API key not provided)');
+        // Handle the case where we're not using the real API
+        // This is for development/testing purposes
+        const sampleEvents = require('../sample-events');
+        
+        // Update timestamp to current time
+        const updatedEvents = sampleEvents.map(event => ({
+          ...event,
+          id: `evt-${Math.random().toString(36).substr(2, 9)}`,
+          timestamp: new Date().toISOString()
+        }));
+        
+        // Take a random event
+        const randomIndex = Math.floor(Math.random() * updatedEvents.length);
+        const randomEvent = updatedEvents[randomIndex];
+        
+        // Process the random event
+        this.processNewEvents([randomEvent]);
+      }
+    } catch (error) {
+      this.consecutiveErrors++;
+      logger.error(`Error polling for events (attempt ${this.consecutiveErrors}):`, error);
+      
+      // If we've had too many consecutive errors, stop polling
+      if (this.consecutiveErrors >= this.maxConsecutiveErrors) {
+        logger.error(`Stopping poller after ${this.consecutiveErrors} consecutive errors`);
+        this.stop();
+        
+        // Emit error event
+        this.emit('error', new Error('Too many consecutive polling errors'));
+        
+        // Try to restart after a longer delay
+        setTimeout(() => {
+          logger.info('Attempting to restart poller after consecutive errors');
+          this.start();
+        }, this.pollingInterval * 2);
+      }
+    }
   }
   
   /**
@@ -209,104 +306,6 @@ module.exports = eventsPoller;) {
   }
 }
 
-  /**
-   * Start polling for events
-   */
-  start() {
-    if (this.isPolling) {
-      logger.debug('Poller already running');
-      return;
-    }
-    
-    logger.info('Starting events poller');
-    this.isPolling = true;
-    
-    // Poll immediately on start
-    this.poll();
-    
-    // Set up polling interval
-    this.pollTimer = setInterval(() => {
-      this.poll();
-    }, this.pollingInterval);
-  }
-
-  /**
-   * Stop polling for events
-   */
-  stop() {
-    if (!this.isPolling) {
-      return;
-    }
-    
-    logger.info('Stopping events poller');
-    this.isPolling = false;
-    
-    if (this.pollTimer) {
-      clearInterval(this.pollTimer);
-      this.pollTimer = null;
-    }
-  }
-
-  /**
-   * Poll for new events
-   */
-  async poll() {
-    if (!this.isPolling) {
-      return;
-    }
-    
-    try {
-      // If we're using the real API and have an API key
-      if (this.useRealApi) {
-        logger.debug('Polling Newscatcher API for events');
-        
-        // Get events from API - adjust days back for balance between response time and coverage
-        // For production, we want a smaller window to avoid long API response times
-        const daysBack = config.server.nodeEnv === 'production' ? 1 : 3;
-        const events = await apiClient.getFundraisingEvents(daysBack);
-        
-        // Process new events
-        this.processNewEvents(events);
-        
-        // Reset consecutive errors counter
-        this.consecutiveErrors = 0;
-      } else {
-        logger.debug('Using sample data (API key not provided)');
-        // Handle the case where we're not using the real API
-        // This is for development/testing purposes
-        const sampleEvents = require('../sample-events');
-        
-        // Update timestamp to current time
-        const updatedEvents = sampleEvents.map(event => ({
-          ...event,
-          id: `evt-${Math.random().toString(36).substr(2, 9)}`,
-          timestamp: new Date().toISOString()
-        }));
-        
-        // Take a random event
-        const randomIndex = Math.floor(Math.random() * updatedEvents.length);
-        const randomEvent = updatedEvents[randomIndex];
-        
-        // Process the random event
-        this.processNewEvents([randomEvent]);
-      }
-    } catch (error) {
-      this.consecutiveErrors++;
-      logger.error(`Error polling for events (attempt ${this.consecutiveErrors}):`, error);
-      
-      // If we've had too many consecutive errors, stop polling
-      if (this.consecutiveErrors >= this.maxConsecutiveErrors) {
-        logger.error(`Stopping poller after ${this.consecutiveErrors} consecutive errors`);
-        this.stop();
-        
-        // Emit error event
-        this.emit('error', new Error('Too many consecutive polling errors'));
-        
-        // Try to restart after a longer delay
-        setTimeout(() => {
-          logger.info('Attempting to restart poller after consecutive errors');
-          this.start();
-        }, this.pollingInterval * 2);
-      }
-    }
-  }
+// Create and export a singleton instance
+const eventsPoller = new EventsPoller();
+module.exports = eventsPoller;
