@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title><%= title %> - Real-time Event Monitor</title>
+  <link rel="stylesheet" href="/css/main.css">
+  <% if (activeEventType === 'fundraising') { %>
+  <link rel="stylesheet" href="/css/events/fundraising.css">
+  <% } %>
+</head>
+<body>
+  <!-- Include header partial -->
+  <%- include('partials/header', { title, eventTypes, activeEventType }) %>
+  
+  <main>
+    <!-- Event type nav -->
+    <div class="event-nav">
+      <% eventTypes.forEach(function(type) { %>
+        <button 
+          class="event-type-btn <%= type.id === activeEventType ? 'active' : '' %>" 
+          data-event-type="<%= type.id %>"
+          <%= !type.enabled ? 'disabled' : '' %>
+        >
+          <%= type.name %>
+        </button>
+      <% }); %>
+    </div>
+    
+    <!-- Render the appropriate filter component -->
+    <div class="filters-container">
+      <% if (activeEventType === 'fundraising') { %>
+        <%- include('events/fundraising/filters') %>
+      <% } else { %>
+        <div class="empty-filters">
+          <p>Filters for this event type are not available yet</p>
+        </div>
+      <% } %>
+    </div>
+    
+    <!-- Stats for the active event type -->
+    <div class="dashboard-header">
+      <h2 id="event-type-title">
+        <% if (activeEventType === 'fundraising') { %>
+          Recent Fundraising Events
+        <% } else { %>
+          Event Monitor
+        <% } %>
+      </h2>
+      
+      <!-- Stats component -->
+      <div class="dashboard-stats">
+        <div class="stat-card">
+          <span class="stat-value" id="total-events">0</span>
+          <span class="stat-label">Total Events</span>
+        </div>
+        <% if (activeEventType === 'fundraising') { %>
+        <div class="stat-card">
+          <span class="stat-value" id="total-funding">$0</span>
+          <span class="stat-label">Total Funding</span>
+        </div>
+        <% } %>
+      </div>
+    </div>
+    
+    <!-- Container for event cards -->
+    <div id="events-container" class="dashboard-grid">
+      <div class="empty-state">
+        <h3>Awaiting events...</h3>
+        <p>Events will appear here as they are received from the stream.</p>
+      </div>
+    </div>
+  </main>
+  
+  <!-- Include footer partial -->
+  <%- include('partials/footer', { config }) %>
+  
+  <!-- Event card templates -->
+  <template id="fundraising-card-template">
+    <%- include('events/fundraising/card') %>
+  </template>
+  
+  <!-- JavaScript files -->
+  <script src="/js/events.js"></script>
+  <script src="/js/filters.js"></script>
+  <script src="/js/main.js"></script>
+</body>
+</html>
