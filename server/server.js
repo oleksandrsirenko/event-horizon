@@ -11,7 +11,15 @@ const app = express();
 const PORT = config.server.port;
 
 // Security middleware
-app.use(helmet());
+app.use(helmet({
+  contentSecurityPolicy: {
+    directives: {
+      ...helmet.contentSecurityPolicy.getDefaultDirectives(),
+      "script-src": ["'self'", "'unsafe-inline'", "cdnjs.cloudflare.com"],
+      "img-src": ["'self'", "data:"]
+    }
+  }
+}));
 
 // Enable CORS for development
 app.use(cors());
@@ -20,8 +28,35 @@ app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
+// Set up EJS as the view engine
+app.set('view engine', 'ejs');
+app.set('views', path.join(__dirname, '../views'));
+
 // Serve static files from the public directory
 app.use(express.static(path.join(__dirname, '../public')));
+
+// Event types configuration
+const eventTypes = [
+  { id: 'fundraising', name: 'Fundraising Events', enabled: true },
+  { id: 'layoff', name: 'Layoff Events', enabled: false },
+  { id: 'data_breach', name: 'Data Breach Events', enabled: false }
+];
+
+// Define main routes
+app.get('/', (req, res) => {
+  // Get the active event type from query parameter or default to fundraising
+  const activeEventType = req.query.eventType || 'fundraising';
+  
+  res.render('index', {
+    title: 'Event Horizon',
+    eventTypes: eventTypes,
+    activeEventType: activeEventType,
+    config: {
+      apiEnabled: !!config.newscatcher.apiKey,
+      environment: config.server.nodeEnv
+    }
+  });
+});
 
 // SSE route for events
 app.get('/stream/events', (req, res) => {
@@ -32,10 +67,10 @@ app.get('/stream/events', (req, res) => {
   
   // Parse filter parameters
   const filters = {
-    region: req.query.region || 'all',
-    severity: req.query.severity || 'all',
     type: req.query.type || 'all',
-    fundingType: req.query.fundingType || 'all'
+    fundingType: req.query.fundingType || 'all',
+    amount: req.query.amount || 'all',
+    company: req.query.company || ''
   };
   
   logger.info(`New SSE connection established with filters: ${JSON.stringify(filters)}`);
@@ -48,6 +83,11 @@ app.get('/stream/events', (req, res) => {
     eventsPoller.removeClient(res);
     logger.info('Client disconnected from SSE stream');
   });
+});
+
+// Event types API endpoint
+app.get('/api/event-types', (req, res) => {
+  res.json(eventTypes.filter(type => type.enabled));
 });
 
 // Health check endpoint
@@ -85,11 +125,16 @@ app.get('/api/info', (req, res) => {
         method: 'GET',
         description: 'Server-Sent Events endpoint for real-time events',
         parameters: {
-          region: 'Filter by region (all, asia, europe, north-america, etc.)',
-          severity: 'Filter by severity (all, high, medium, low)',
-          type: 'Filter by event type (all, fundraising, etc.)',
-          fundingType: 'Filter by funding type (all, Series A, Seed, etc.)'
+          type: 'Filter by event type (all, fundraising, layoff, data_breach)',
+          fundingType: 'Filter by funding type (all, Series A, Seed, etc.)',
+          amount: 'Filter by amount range (all, high, medium, low)',
+          company: 'Filter by company name'
         }
+      },
+      {
+        path: '/api/event-types',
+        method: 'GET',
+        description: 'Get available event types'
       },
       {
         path: '/health',
