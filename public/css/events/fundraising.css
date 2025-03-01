@@ -1,0 +1,61 @@
+/* Specific styles for fundraising events */
+
+.funding-amount {
+    font-size: 1.5rem;
+    font-weight: bold;
+    color: #16a085;
+    margin: 0.5rem 0;
+  }
+  
+  .investors {
+    margin-top: 0.5rem;
+    font-size: 0.9rem;
+  }
+  
+  .investors span {
+    display: inline-block;
+    margin-right: 0.5rem;
+    margin-bottom: 0.5rem;
+    padding: 0.15rem 0.4rem;
+    background-color: #f5f7fa;
+    border-radius: 4px;
+    font-size: 0.8rem;
+  }
+  
+  /* Fundraising card specific styles */
+  .alert-card[data-funding-type="Seed"] {
+    border-left-color: #9b59b6;
+  }
+  
+  .alert-card[data-funding-type="Series A"] {
+    border-left-color: #3498db;
+  }
+  
+  .alert-card[data-funding-type="Series B"] {
+    border-left-color: #2ecc71;
+  }
+  
+  .alert-card[data-funding-type="Series C"] {
+    border-left-color: #f39c12;
+  }
+  
+  .alert-card[data-funding-type="IPO"] {
+    border-left-color: #e74c3c;
+  }
+  
+  .alert-card[data-funding-type="Acquisition"] {
+    border-left-color: #34495e;
+  }
+  
+  /* Funding amount styles based on size */
+  .alert-card[data-amount="high"] .funding-amount {
+    color: #16a085;
+  }
+  
+  .alert-card[data-amount="medium"] .funding-amount {
+    color: #3498db;
+  }
+  
+  .alert-card[data-amount="low"] .funding-amount {
+    color: #9b59b6;
+  }
